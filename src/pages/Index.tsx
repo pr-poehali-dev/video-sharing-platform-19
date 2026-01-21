@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,8 +14,14 @@ export default function Index() {
   const [videos, setVideos] = useState([]);
   const [trendingHashtags, setTrendingHashtags] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      setCurrentUser(JSON.parse(userData));
+    }
     fetchVideos();
     fetchTrending();
   }, []);
@@ -79,7 +86,13 @@ export default function Index() {
           ].map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveSection(item.id)}
+              onClick={() => {
+                if (item.id === 'profile') {
+                  navigate('/profile');
+                } else {
+                  setActiveSection(item.id);
+                }
+              }}
               className={`w-full flex items-center gap-4 px-3 lg:px-4 py-3 rounded-xl transition-all duration-300 ${
                 activeSection === item.id
                   ? 'bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/50'
@@ -92,11 +105,33 @@ export default function Index() {
           ))}
         </nav>
 
-        <div className="p-2 lg:p-4">
-          <Button className="w-full gradient-primary hover:opacity-90 transition-opacity font-bold text-base py-6 rounded-full">
-            <Icon name="Plus" size={20} className="lg:mr-2" />
-            <span className="hidden lg:inline">Загрузить</span>
-          </Button>
+        <div className="p-2 lg:p-4 space-y-3">
+          {currentUser ? (
+            <>
+              <Button className="w-full gradient-primary hover:opacity-90 transition-opacity font-bold text-base py-6 rounded-full">
+                <Icon name="Plus" size={20} className="lg:mr-2" />
+                <span className="hidden lg:inline">Загрузить</span>
+              </Button>
+              <div className="hidden lg:flex items-center gap-3 p-3 rounded-xl bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => navigate('/profile')}>
+                <Avatar className="w-10 h-10">
+                  <AvatarImage src={currentUser.avatar} />
+                  <AvatarFallback>{currentUser.username[0]}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{currentUser.username}</p>
+                  <p className="text-xs text-muted-foreground">Мой профиль</p>
+                </div>
+              </div>
+            </>
+          ) : (
+            <Button 
+              onClick={() => navigate('/login')}
+              className="w-full gradient-primary hover:opacity-90 transition-opacity font-bold text-base py-6 rounded-full"
+            >
+              <Icon name="LogIn" size={20} className="lg:mr-2" />
+              <span className="hidden lg:inline">Войти</span>
+            </Button>
+          )}
         </div>
       </aside>
 
