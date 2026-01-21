@@ -1,57 +1,62 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 
-const mockVideos = [
-  {
-    id: 1,
-    username: '@creative_soul',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=1',
-    description: 'Удивительный трюк с монтажом! 🎬 #видеомонтаж #креатив',
-    likes: '245K',
-    comments: '1.2K',
-    shares: '856',
-    music: 'Trending Sound #1',
-    thumbnail: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-  },
-  {
-    id: 2,
-    username: '@dance_master',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=2',
-    description: 'Новый челлендж 🔥 Повтори если сможешь! #танцы #challenge',
-    likes: '892K',
-    comments: '3.5K',
-    shares: '2.1K',
-    music: 'Dance Vibes Mix',
-    thumbnail: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
-  },
-  {
-    id: 3,
-    username: '@tech_wizard',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=3',
-    description: 'Лайфхак дня: как ускорить смартфон 📱 #tech #лайфхак',
-    likes: '567K',
-    comments: '987',
-    shares: '1.3K',
-    music: 'Tech Beats 2024',
-    thumbnail: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
-  }
-];
-
-const trendingHashtags = [
-  { tag: '#Challenge2024', views: '12.5M' },
-  { tag: '#ВираличныйТанец', views: '8.9M' },
-  { tag: '#ЛайфхакиДня', views: '6.2M' },
-  { tag: '#КреативныйМонтаж', views: '5.1M' }
-];
+const API_URL = 'https://functions.poehali.dev/13f3dab4-dcb1-486f-9c81-adb72a594f09';
 
 export default function Index() {
   const [activeSection, setActiveSection] = useState('home');
   const [searchQuery, setSearchQuery] = useState('');
+  const [videos, setVideos] = useState([]);
+  const [trendingHashtags, setTrendingHashtags] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchVideos();
+    fetchTrending();
+  }, []);
+
+  const fetchVideos = async () => {
+    try {
+      const response = await fetch(`${API_URL}?action=feed`);
+      const data = await response.json();
+      setVideos(data.videos || []);
+    } catch (error) {
+      console.error('Error fetching videos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTrending = async () => {
+    try {
+      const response = await fetch(`${API_URL}?action=trending`);
+      const data = await response.json();
+      setTrendingHashtags(data.hashtags || []);
+    } catch (error) {
+      console.error('Error fetching trending:', error);
+    }
+  };
+
+  const handleLike = async (videoId: number) => {
+    try {
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'like',
+          userId: 1,
+          videoId
+        })
+      });
+      fetchVideos();
+    } catch (error) {
+      console.error('Error liking video:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-black text-white flex">
@@ -116,9 +121,23 @@ export default function Index() {
         <div className="flex">
           {/* Videos Column */}
           <div className="flex-1 max-w-2xl mx-auto">
-            <ScrollArea className="h-[calc(100vh-5rem)]">
+            <div className="h-[calc(100vh-5rem)] overflow-y-auto">
               <div className="space-y-4 p-4">
-                {mockVideos.map((video) => (
+                {loading ? (
+                  <div className="flex items-center justify-center h-96">
+                    <div className="text-center">
+                      <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                      <p className="text-muted-foreground">Загрузка видео...</p>
+                    </div>
+                  </div>
+                ) : videos.length === 0 ? (
+                  <div className="flex items-center justify-center h-96">
+                    <div className="text-center">
+                      <Icon name="Video" size={48} className="mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-muted-foreground">Нет видео для показа</p>
+                    </div>
+                  </div>
+                ) : videos.map((video: any) => (
                   <div key={video.id} className="relative group">
                     {/* Video Container */}
                     <div 
@@ -158,8 +177,11 @@ export default function Index() {
 
                       {/* Right Side Actions */}
                       <div className="absolute right-4 bottom-20 space-y-6">
-                        <button className="flex flex-col items-center gap-1 hover:scale-110 transition-transform">
-                          <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                        <button 
+                          onClick={() => handleLike(video.id)}
+                          className="flex flex-col items-center gap-1 hover:scale-110 transition-transform"
+                        >
+                          <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center hover:bg-primary/30">
                             <Icon name="Heart" size={24} className="text-white" />
                           </div>
                           <span className="text-xs font-bold text-white">{video.likes}</span>
@@ -189,7 +211,7 @@ export default function Index() {
                   </div>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           </div>
 
           {/* Right Sidebar - Trends */}

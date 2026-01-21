@@ -1,0 +1,24 @@
+{
+  "tests": [
+    {
+      "name": "Get video feed",
+      "method": "GET",
+      "path": "/?action=feed",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "videos": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Get trending hashtags",
+      "method": "GET",
+      "path": "/?action=trending",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "hashtags": "array"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
